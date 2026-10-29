@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Plantão Santa Clara</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=Martian+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sinalização hospitalar — letreiros condensados, pulseira do paciente como objeto central, uma tarefa por tela, barra de abas embaixo */
+:root{
+  --bg:#E9EFEC; --card:#FFFFFF; --ink:#102A25; --muted:#55706A; --line:#C8D6D0;
+  --teal:#0B7A64; --teal-ink:#FFFFFF; --teal-soft:#D3ECE3;
+  --alert:#C93A2A; --alert-soft:#FBE2DD; --amber:#9A6500; --amber-soft:#FAEDCF; --band:#F6F8F7;
+  --f-sign:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Martian Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C1916; --card:#14251F; --ink:#E2EEE9; --muted:#93AAA2; --line:#2A403A;
+  --teal:#3CC29F; --teal-ink:#06231C; --teal-soft:#16382F;
+  --alert:#FF6B57; --alert-soft:#3B1D18; --amber:#F0B543; --amber-soft:#3A2D12; --band:#101F1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1916; --card:#14251F; --ink:#E2EEE9; --muted:#93AAA2; --line:#2A403A;
+  --teal:#3CC29F; --teal-ink:#06231C; --teal-soft:#16382F;
+  --alert:#FF6B57; --alert-soft:#3B1D18; --amber:#F0B543; --amber-soft:#3A2D12; --band:#101F1B; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--card)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--card);border-bottom:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px}
+.top-in{max-width:560px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:var(--f-sign);font-weight:900;font-size:24px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.brand small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;letter-spacing:.03em;text-transform:none;color:var(--muted);margin-top:3px}
+.clock{font-family:var(--f-mono);font-size:14px;font-weight:600;background:var(--ink);color:var(--card);padding:6px 10px;border-radius:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px}
+.view{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:600}
+h1,h2,h3{font-family:var(--f-sign);font-weight:800;text-transform:uppercase;line-height:.95;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:clamp(44px,13vw,64px)}
+h2{font-size:34px}
+h3{font-size:24px}
+p{margin:0}
+.lead{font-size:18px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+
+.btn{appearance:none;border:0;border-radius:10px;padding:15px 18px;font-weight:700;font-size:16px;cursor:pointer;background:var(--teal);color:var(--teal-ink);width:100%;text-align:center;transition:transform .08s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.danger{background:var(--alert);color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+
+.sector{display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--card);border-radius:10px;padding:12px 14px}
+.sector .arrow{font-family:var(--f-sign);font-weight:900;font-size:30px;line-height:1}
+.sector b{font-family:var(--f-sign);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.03em;line-height:1}
+.sector span{display:block;font-size:13px;opacity:.75}
+
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--teal)}
+.meta{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+.band{position:relative;background:var(--band);border:1.5px solid var(--line);border-radius:22px;padding:16px 18px 16px 58px;overflow:hidden}
+.band::before{content:"";position:absolute;left:0;top:0;bottom:0;width:42px;
+  background:repeating-linear-gradient(0deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px,var(--ink) 8px 11px,transparent 11px 13px);opacity:.85}
+.band .pn{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.band .nm{font-family:var(--f-sign);font-weight:800;font-size:28px;text-transform:uppercase;line-height:1;margin:4px 0 10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:15px;margin:0}
+.kv dt{color:var(--muted);font-size:13px;align-self:center}
+.kv dd{margin:0;font-family:var(--f-mono);font-size:14px;font-weight:600;min-width:0}
+.allergy{display:inline-block;background:var(--alert);color:#fff;font-family:var(--f-mono);font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px}
+.allergy.none{background:var(--line);color:var(--ink)}
+
+.doc{background:var(--card);border:1.5px dashed var(--muted);border-radius:12px;padding:14px 16px}
+.doc .pn{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.08em}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field>label,.field>.lbl{font-size:13px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{appearance:none;text-align:left;border:1.5px solid var(--line);background:var(--card);border-radius:8px;padding:12px 14px;font-family:var(--f-mono);font-size:14px;cursor:pointer}
+.opt.sel{border-color:var(--teal);background:var(--teal-soft);font-weight:600}
+.opt.body{font-family:var(--f-body);font-size:16px}
+
+.bubble{background:var(--amber-soft);border-radius:14px 14px 14px 4px;padding:12px 14px;font-size:16px}
+.bubble small{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--amber);font-weight:600;margin-bottom:2px}
+.rx{border-left:5px solid var(--amber);background:var(--amber-soft);border-radius:8px;padding:12px 14px}
+.rx small{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.rx b{font-family:var(--f-mono);font-size:15px}
+.alertbox{border:2px solid var(--alert);background:var(--alert-soft);border-radius:10px;padding:12px 14px;font-weight:700}
+.alertbox small{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--alert);margin-bottom:4px}
+.noaccess{font-family:var(--f-mono);font-size:13px;color:var(--muted);border:1px dashed var(--line);border-radius:6px;padding:6px 8px}
+
+.screens{display:grid;grid-template-columns:1fr;gap:10px}
+.screen{border:1.5px solid var(--line);border-radius:10px;background:var(--card);overflow:hidden;transition:opacity .3s}
+.screen header{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--band);padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--f-sign);font-weight:800;text-transform:uppercase;font-size:18px;letter-spacing:.03em}
+.screen header em{font-style:normal;font-family:var(--f-mono);font-size:10px;color:var(--teal);letter-spacing:.06em}
+.screen .body{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.screen.fill .body{animation:fill .6s ease both}
+@keyframes fill{from{background:var(--teal-soft)}to{background:transparent}}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.stat b{display:block;font-family:var(--f-sign);font-weight:900;font-size:38px;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.stat.bad b{color:var(--alert)}
+.stat.good b{color:var(--teal)}
+.stat.warn b{color:var(--amber)}
+
+.issues{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.issues li{border-left:4px solid var(--alert);background:var(--card);padding:10px 12px;border-radius:6px;font-size:15px}
+.issues li.div{border-color:var(--amber)}
+.issues li.ok{border-color:var(--teal)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table.cmp{width:100%;border-collapse:collapse;font-size:15px}
+.cmp th,.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left}
+.cmp tr:last-child td{border-bottom:0}
+.cmp th{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cmp .n{font-family:var(--f-mono);font-weight:600;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* pontes */
+.netwrap{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px}
+svg.net{width:100%;height:auto;display:block;max-height:340px}
+.cash{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--ink);color:var(--card);border-radius:10px;padding:10px 14px}
+.cash b{font-family:var(--f-mono);font-size:18px;font-variant-numeric:tabular-nums}
+.cash span{font-size:13px;opacity:.8}
+.pair{appearance:none;display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--card);border-radius:8px;padding:11px 12px;cursor:pointer;font-size:15px}
+.pair .pr{font-family:var(--f-mono);font-size:12px;white-space:nowrap;color:var(--muted)}
+.pair.on{border-color:var(--teal);background:var(--teal-soft)}
+.pair.on .pr{color:var(--teal);font-weight:600}
+.pair.lock{opacity:.6;cursor:default}
+.pair.brk{border-color:var(--alert);background:var(--alert-soft)}
+.flows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.flows li{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.flows .rt{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.chip{align-self:flex-start;font-family:var(--f-mono);font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:4px}
+.chip.ok{background:var(--teal-soft);color:var(--teal)}
+.chip.at{background:var(--amber-soft);color:var(--amber)}
+.chip.fa{background:var(--alert-soft);color:var(--alert)}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.bignum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bignum b{font-family:var(--f-sign);font-weight:900;font-size:64px;line-height:.9;font-variant-numeric:tabular-nums}
+.formula{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.seg{display:flex;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:4px;gap:4px}
+.seg button{flex:1;appearance:none;border:0;background:transparent;border-radius:7px;padding:10px 6px;font-weight:700;cursor:pointer;font-size:14px}
+.seg button.on{background:var(--ink);color:var(--card)}
+
+/* permissões */
+.prow{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.prow .ph{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.prow .ph b{font-family:var(--f-sign);font-weight:800;font-size:20px;text-transform:uppercase;letter-spacing:.03em}
+.prow .mark{font-family:var(--f-mono);font-size:12px;font-weight:600}
+.prow.okr{border-color:var(--teal)}
+.prow.okr .mark{color:var(--teal)}
+.prow.bad{border-color:var(--alert)}
+.prow.bad .mark{color:var(--alert)}
+.lvl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.lvl button{appearance:none;border:1.5px solid var(--line);background:var(--band);border-radius:7px;padding:9px 4px;font-size:14px;font-weight:700;cursor:pointer}
+.lvl button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.lvl button:disabled{cursor:default}
+.why{font-size:14px;color:var(--muted)}
+
+.modal{position:fixed;inset:0;z-index:20;background:rgba(6,20,16,.6);display:flex;align-items:flex-end;justify-content:center;overflow-y:auto;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-top:calc(12px + env(safe-area-inset-top,0px));padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.modal .sheet{background:var(--card);border-radius:16px;padding:20px;max-width:560px;width:100%;display:flex;flex-direction:column;gap:12px;animation:up .25s ease}
+.phone{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;color:var(--amber);font-weight:600}
+@keyframes up{from{transform:translateY(30px);opacity:.3}to{transform:none;opacity:1}}
+
+.feedback{border-radius:10px;padding:12px 14px;font-size:15px}
+.feedback.ok{background:var(--teal-soft)}
+.feedback.no{background:var(--alert-soft)}
+.feedback.mid{background:var(--amber-soft)}
+.feedback b{display:block;margin-bottom:2px}
+.qcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;font-size:18px}
+.qcard .tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;color:var(--muted);margin-bottom:8px;display:block}
+.score{display:flex;align-items:baseline;gap:8px}
+.score b{font-family:var(--f-sign);font-weight:900;font-size:88px;line-height:.85;color:var(--teal);font-variant-numeric:tabular-nums}
+.score span{font-family:var(--f-mono);font-size:16px;color:var(--muted)}
+.code{width:100%;min-height:96px;font-family:var(--f-mono);font-size:13px;border:1.5px solid var(--line);border-radius:8px;padding:10px;background:var(--band);color:var(--ink);resize:none}
+.parts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.parts li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.parts li:last-child{border-bottom:0}
+.parts .n{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:1px solid var(--line);
+  padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px));padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs-in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.tabs button{appearance:none;border:0;background:transparent;padding:6px 1px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);min-width:0}
+.tabs button b{font-family:var(--f-sign);font-weight:900;font-size:20px;line-height:1}
+.tabs button span{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tabs button.on{color:var(--teal);background:var(--teal-soft)}
+.tabs button.done b::after{content:"✓";font-size:12px;margin-left:2px}
+
+.peek{position:fixed;left:50%;top:calc(76px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;width:min(92vw,520px);display:flex;flex-direction:column;gap:8px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand">Plantão Santa Clara<small>Pronto-atendimento · sistemas integrados</small></div>
+  <div class="clock" id="clock" hidden>00:00</div>
+</div></header>
+
+<main>
+  <section class="view" id="v-inicio"></section>
+  <section class="view" id="v-t1" hidden></section>
+  <section class="view" id="v-t2" hidden></section>
+  <section class="view" id="v-t3" hidden></section>
+  <section class="view" id="v-dx" hidden></section>
+  <section class="view" id="v-fim" hidden></section>
+</main>
+
+<nav class="tabs" aria-label="Etapas"><div class="tabs-in">
+  <button data-tab="inicio"><b>0</b><span>Início</span></button>
+  <button data-tab="t1"><b>1A</b><span>Fichas</span></button>
+  <button data-tab="t2"><b>1B</b><span>Pontes</span></button>
+  <button data-tab="t3"><b>2</b><span>Prontuário</span></button>
+  <button data-tab="dx"><b>3</b><span>Casos</span></button>
+  <button data-tab="fim"><b>4</b><span>Placar</span></button>
+</div></nav>
+
+<div id="modal-root"></div>
+
+<script>
+/* ================= dados ================= */
+const P=[
+ {id:"004812",leito:"Maca 3",nome:"Maria Aparecida Souza",nasc:"12/03/1987",alergia:"Dipirona",presc:"Paracetamol 750 mg",bloq:false,
+  o:{nome:["Maria Aparecida Souza","Maria Aparecida Sousa","Maria Aparecida S. Lima"],nasc:["12/03/1987","03/12/1987","12/03/1978"],alergia:["Dipirona","Diclofenaco","Nenhuma"]}},
+ {id:"004813",leito:"Maca 7",nome:"José Carlos Santana",nasc:"05/11/1952",alergia:"Nenhuma",presc:"Dipirona 1 g",bloq:false,
+  o:{nome:["José Carlos Santana","José Carlos Sant'Anna","José Carlos Santos"],nasc:["05/11/1952","15/11/1952","05/11/1962"],alergia:["Nenhuma","Dipirona","Iodo"]}},
+ {id:"004814",leito:"Maca 2",nome:"Ana Lúcia Ferreira",nasc:"21/07/1999",alergia:"Nenhuma",late:"Penicilina",allergen:"Penicilina",presc:"Amoxicilina 500 mg (uma penicilina)",bloq:true,
+  o:{nome:["Ana Lúcia Ferreira","Ana Luiza Ferreira","Ana Lúcia Pereira"],nasc:["21/07/1999","27/01/1999","21/07/1990"],alergia:["Nenhuma","Penicilina","Dipirona"]}},
+ {id:"004815",leito:"Maca 9",nome:"José Carlos Santana",nasc:"19/04/1990",alergia:"Iodo",allergen:"Iodo",presc:"Contraste iodado (tomografia)",bloq:true,
+  o:{nome:["José Carlos Santana","José Carlos Sant'Anna","José Carlos Santos"],nasc:["19/04/1990","05/11/1952","19/04/1909"],alergia:["Iodo","Nenhuma","Látex"]}},
+ {id:"004816",leito:"Maca 5",nome:"Antônio Bispo dos Reis",nasc:"30/01/1968",alergia:"Látex",presc:"Paracetamol 750 mg",bloq:false,
+  o:{nome:["Antônio Bispo dos Reis","Antônio Bispo Reis","Antônio dos Reis Bispo"],nasc:["30/01/1968","03/10/1968","30/01/1986"],alergia:["Látex","Nenhuma","Iodo"]}}
+];
+const NASC2="12/08/1987";
+const who=k=>P[k].nome.split(" ")[0]+(k===1?" Carlos (1952)":k===3?" Carlos (1990)":"");
+const SEC={R:"Recepção",T:"Triagem",L:"Laboratório",F:"Farmácia",B:"Faturamento"};
+const ABR={R:"REC",T:"TRI",L:"LAB",F:"FAR",B:"FAT"};
+const ORD="RTLFB";
+const pk=(a,b)=>ORD.indexOf(a)<ORD.indexOf(b)?a+b:b+a;
+const FLOWS1=[{a:"R",b:"T",d:"Cadastro do paciente"},{a:"R",b:"L",d:"Cadastro para etiquetar o tubo"},{a:"R",b:"F",d:"Cadastro para entregar o remédio"},{a:"T",b:"F",d:"Alergia descoberta na triagem"},{a:"L",b:"F",d:"Resultado de exame"}];
+const FLOWS2=[{a:"R",b:"B",d:"Convênio do paciente"},{a:"L",b:"B",d:"Exames feitos, para cobrar"},{a:"F",b:"B",d:"Remédios entregues, para cobrar"}];
+const COST=10000,REPAIR=4000,UPKEEP=1500;
+
+const ITEMS=[
+ {k:"cad",n:"Cadastro",d:"Nome, data de nascimento e documento do paciente.",
+  ok:{R:["E"],T:["V"],L:["V"],F:["V"],B:["V"]},
+  why:{R:"Quem cadastra o paciente é a recepção. Ela precisa editar.",T:"A triagem confere quem é o paciente, mas não altera o cadastro.",L:"O laboratório usa o cadastro para etiquetar o tubo. Ver basta.",F:"A farmácia confere o nome na entrega do remédio. Ver basta.",B:"O faturamento precisa do cadastro para cobrar. Ver basta."}},
+ {k:"ale",n:"Alergias",d:"O que o paciente não pode receber.",
+  ok:{R:["E","V"],T:["E"],L:["V","N"],F:["V"],B:["N"]},
+  why:{R:"A recepção pode registrar ou só conferir o que o paciente informa na chegada.",T:"É na triagem que a alergia costuma aparecer. Sem editar, a informação fica num papel.",L:"O laboratório quase nunca precisa. Ver ou nada, tanto faz.",F:"A farmácia precisa ver a alergia antes de entregar o remédio. Alterar não é função dela.",B:"Alergia é dado de saúde. O faturamento não precisa dele para cobrar."}},
+ {k:"res",n:"Resultados de exame",d:"O que o laboratório encontrou.",
+  ok:{R:["N"],T:["V","N"],L:["E"],F:["V","N"],B:["N"]},
+  why:{R:"Resultado é dado sensível. A recepção não precisa dele.",T:"A enfermagem pode consultar se precisar.",L:"Quem lança o resultado é o laboratório. Sem editar, o exame não entra no prontuário.",F:"A farmácia pode consultar, por exemplo, para ajustar dose.",B:"O faturamento cobra o exame, não precisa ver o resultado."}},
+ {k:"con",n:"Convênio e valores",d:"Plano de saúde, autorizações e preços.",
+  ok:{R:["E"],T:["N"],L:["N"],F:["N","V"],B:["V","E"]},
+  why:{R:"A recepção registra o convênio na chegada.",T:"A triagem atende pelo risco, não pelo convênio.",L:"O laboratório não precisa saber quanto custa.",F:"A farmácia pode ver se o convênio cobre o remédio.",B:"O faturamento trabalha com esses valores."}}
+];
+const LV={N:"Nenhum",V:"Ver",E:"Editar"};
+
+const DXO=["Dado duplicado","Retrabalho","Várias versões da verdade","Decisão cega","Nenhum: já é integrado"];
+const DX=[
+ {t:"Clínica",s:"O paciente Pedro Alves aparece três vezes no sistema: Pedro Alves, Pedro A. Alves e Pedro Alvez.",a:0,e:"Dado duplicado. É a mesma pessoa cadastrada mais de uma vez. Cada cópia vai envelhecer de um jeito."},
+ {t:"Transportadora",s:"O motorista anota as entregas num papel e, à noite, alguém do escritório digita tudo de novo no sistema.",a:1,e:"Retrabalho. A mesma informação é registrada duas vezes, por duas pessoas, com duas chances de erro."},
+ {t:"Loja de material de construção",s:"Na reunião, o estoque diz que há 40 sacos de cimento e o comercial diz 25. Os dois tiraram o número do próprio sistema.",a:2,e:"Várias versões da verdade. Cada setor tem o seu saldo, e a reunião vira uma conciliação."},
+ {t:"Rede de padarias",s:"O dono quer saber qual loja vende mais pão à tarde. Cada loja tem seu caixa e ninguém consegue juntar os números.",a:3,e:"Decisão cega. Os dados existem, mas espalhados. Quem decide não enxerga o todo."},
+ {t:"Supermercado",s:"A venda no caixa baixa o estoque e, quando o arroz fica abaixo do mínimo, o pedido vai sozinho para o fornecedor.",a:4,e:"Já é integrado. O dado registrado no caixa chega ao estoque e ao fornecedor sem ninguém repassar."},
+ {t:"Faculdade",s:"Secretaria e coordenação usam o mesmo programa, mas cada uma recadastra o aluno porque o cadastro da outra vem incompleto.",a:0,e:"Dado duplicado. Mesmo software não quer dizer integração. Se o aluno existe duas vezes, não está integrado."},
+ {t:"Loja online",s:"Quando o cliente abre o chat, o atendente já vê as compras, as trocas e as reclamações anteriores dele.",a:4,e:"Já é integrado. Vendas, trocas e atendimento olham para o mesmo cadastro do cliente."}
+];
+const FINAL={q:"Na Parte 2, cada setor continuou com a sua tela. O que exatamente mudou?",
+ o:[["O hospital passou a precisar de menos funcionários",0],["As telas de todos os setores ficaram iguais",0],["O dado passou a morar num lugar só, e cada tela virou uma janela para ele",1],["O hospital comprou computadores mais rápidos",0]],
+ e:"O que mudou foi o lugar onde o dado mora, não o lugar onde as pessoas trabalham. Cada setor mantém sua tela, sua rotina e sua permissão. O que deixou de existir foi a segunda cópia do dado."};
+
+/* ================= estado ================= */
+const LS="plantao-santa-clara-v1";
+const DEF=()=>({tab:"inicio",t1:null,r1:null,t2:null,r2:null,t3:null,r3:null,dx:{i:0,ans:null,score:0},fin:null,net:{n:4,mode:"ilhas"}});
+let S;
+try{S=JSON.parse(localStorage.getItem(LS))||DEF()}catch(e){S=DEF()}
+if(!S||!S.dx)S=DEF();
+let UI={reset:false};
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+[S.t1,S.t3].forEach(g=>{if(g&&g.running)g.since=Date.now()});
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const brl=v=>"R$ "+(v/1000).toLocaleString("pt-BR")+" mil";
+const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+const clamp=v=>Math.max(0,Math.round(v));
+
+/* relógio */
+function elapsed(g){return Math.floor((g.acc+(g.since?Date.now()-g.since:0))/1000)+g.pen}
+function stopClock(g){if(g.since){g.acc+=Date.now()-g.since;g.since=null}g.running=false}
+document.addEventListener("visibilitychange",()=>{[S.t1,S.t3].forEach(g=>{if(!g||!g.running)return;if(document.hidden){if(g.since){g.acc+=Date.now()-g.since;g.since=null}}else g.since=Date.now()});save()});
+setInterval(()=>{
+  const g=S.tab==="t1"?S.t1:S.tab==="t3"?S.t3:null,c=$("#clock");
+  if(g&&g.running){c.hidden=false;c.textContent=fmt(elapsed(g))+(g.pen?" +"+g.pen+"s":"")}else c.hidden=true;
+},250);
+
+/* abas */
+function go(tab){S.tab=tab;UI.reset=false;render();window.scrollTo(0,0)}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+function marks(){
+  const d={t1:!!S.r1,t2:!!S.r2,t3:!!S.r3,dx:S.dx.i>=DX.length,fim:S.fin!==null};
+  document.querySelectorAll(".tabs button").forEach(b=>{b.classList.toggle("on",b.dataset.tab===S.tab);b.classList.toggle("done",!!d[b.dataset.tab])});
+}
+
+/* componentes */
+function sector(name,sub){return `<div class="sector"><div class="arrow">→</div><div><b>${name}</b><span>${sub}</span></div></div>`}
+function steps(n,cur){return `<div class="steps">${[...Array(n)].map((_,k)=>`<i class="${k<=cur?"on":""}"></i>`).join("")}</div>`}
+function band(label,nome,nasc,ale){
+  return `<div class="band"><div class="pn">${label}</div><div class="nm">${esc(nome)}</div>
+  <dl class="kv"><dt>Nasc.</dt><dd>${nasc}</dd><dt>Alergia</dt><dd><span class="allergy ${ale==="Nenhuma"?"none":""}">${esc(ale).toUpperCase()}</span></dd></dl></div>`;
+}
+function optField(gk,key,label,opts){
+  const g=S[gk],k=g.i+"-"+key;
+  if(!g.order[k])g.order[k]=shuffle(opts);
+  return `<div class="field"><div class="lbl">${label}</div><div class="opts">${g.order[k].map(v=>
+    `<button class="opt ${g.picks[key]===v?"sel":""}" data-v="${esc(v)}" onclick="pick('${gk}','${key}',this.dataset.v)">${esc(v)}</button>`).join("")}</div></div>`;
+}
+function pick(gk,key,v){S[gk].picks[key]=v;render()}
+function flash(html,ms){const el=document.createElement("div");el.className="peek";el.innerHTML=html;document.body.appendChild(el);setTimeout(()=>el.remove(),ms)}
+
+/* ================= início ================= */
+function vInicio(){
+  return `<div class="eyebrow">Sistemas integrados · cerca de 15 minutos</div>
+  <h1>O mesmo hospital, sem e com sistema integrado</h1>
+  <p class="lead">Você vai cobrir o pronto-atendimento do Hospital Santa Clara duas vezes, com os mesmos pacientes. Primeiro sem sistema integrado. Depois com ele.</p>
+  ${band("PRONT. Nº 004812 · MACA 3","Maria Aparecida Souza","12/03/1987","Dipirona")}
+  <div class="card stack small">
+    <p><b>Parte 1 · Sem sistema integrado.</b> A desorganização em duas etapas.</p>
+    <p class="muted">1A · Fichas: cada setor com sua ficha de papel. Você leva os dados de um setor a outro, de cabeça.<br>1B · Pontes: cada setor ganha seu próprio sistema, e você tenta remendar a comunicação entre eles com orçamento limitado.</p>
+    <p><b>Parte 2 · Com sistema integrado.</b> Um prontuário único. Você define quem pode ver e editar cada dado, cobre o plantão e enfrenta uma queda do servidor.</p>
+    <p><b>Casos.</b> Sete situações de outras empresas para diagnosticar.</p>
+  </div>
+  <p class="muted small">Cada parte vale pontos, até 100. No Placar, você recebe um código para entregar no Classroom. O progresso fica salvo neste navegador.</p>
+  <button class="btn" onclick="go('t1')">Começar a Parte 1</button>`;
+}
+
+/* ================= turno 1: fichas ================= */
+function newT1(){
+  S.t1={i:0,stage:"rec",picks:{},order:{},rec:[],acc:0,since:Date.now(),pen:0,running:true,peeks:0,corrected:false,labFixed:false,modal:null,homo:null,anaPeek:false};
+  S.r1=null;render();window.scrollTo(0,0);
+}
+function recView(k,g){return{nome:P[k].nome,nasc:k===0&&g.corrected?NASC2:P[k].nasc,alergia:P[k].alergia}}
+function peek1(){
+  const g=S.t1;g.pen+=5;g.peeks++;if(g.i===2&&g.stage!=="tri")g.anaPeek=true;
+  const r=recView(g.i,g);
+  flash(band("FICHA DA RECEPÇÃO · SOME EM 3 s",r.nome,r.nasc,r.alergia),3000);save();
+}
+function vT1(){
+  const g=S.t1;
+  if(!g){
+    if(S.r1)return resT1();
+    return `<div class="eyebrow">Parte 1A · sem sistema integrado</div><h2>Cada setor com a sua ficha</h2>
+    <p class="lead">Cinco pacientes passam por recepção, triagem, laboratório e farmácia. Cada setor tem a própria ficha.</p>
+    <div class="card stack small">
+      <p>Leia a pulseira na recepção. Nos outros setores, você preenche a ficha daquele setor <b>de memória</b>, escolhendo entre opções quase iguais.</p>
+      <p>Pode consultar a ficha da recepção, mas cada consulta custa <b>5 segundos</b>. E a ficha da recepção só sabe o que a recepção ouviu.</p>
+      <p>Na farmácia, você decide se libera o remédio. Fique atento ao telefone.</p>
+    </div>
+    <button class="btn" onclick="newT1()">Começar o turno</button>`;
+  }
+  const k=g.i,p=P[k],pg=`<div class="meta"><span>Paciente ${k+1} de 5</span><span>${{rec:"Recepção",tri:"Triagem",lab:"Laboratório",far:"Farmácia"}[g.stage]}</span></div>`+steps(4,["rec","tri","lab","far"].indexOf(g.stage));
+  const peekBtn=`<button class="btn ghost" onclick="peek1()">Consultar a recepção (+5 s)</button>`;
+  if(g.stage==="rec"){const r=recView(k,g);return pg+sector("Recepção","Ficha da recepção")+band("PRONT. Nº "+p.id+" · "+p.leito.toUpperCase(),r.nome,r.nasc,r.alergia)+
+    `<p class="muted">Guarde esses dados. A ficha fica aqui.</p><button class="btn" onclick="S.t1.stage='tri';render()">Encaminhar à triagem</button>`}
+  if(g.stage==="tri")return pg+sector("Triagem","Ficha da enfermagem")+
+    (p.late?`<div class="bubble"><small>A MÃE DA PACIENTE, NA TRIAGEM</small>“Ela tem alergia a penicilina! Esqueci de falar lá na frente.”</div>`:"")+
+    `<div class="card stack">${optField("t1","tnome","Nome do paciente",p.o.nome)}${optField("t1","tale","Alergia",p.o.alergia)}</div>
+    <div class="row">${peekBtn}<button class="btn" ${g.picks.tnome&&g.picks.tale?"":"disabled"} onclick="S.t1.stage='lab';render();scrollTo(0,0)">Salvar e ir ao laboratório</button></div>`;
+  if(g.stage==="lab")return pg+sector("Laboratório","Ficha própria do laboratório")+
+    `<p class="small muted">O tubo de sangue precisa de nome e nascimento na etiqueta.</p>
+    <div class="card stack">${optField("t1","lnome","Nome do paciente",p.o.nome)}${optField("t1","lnasc","Data de nascimento",p.o.nasc)}</div>
+    <div class="row">${peekBtn}<button class="btn" ${g.picks.lnome&&g.picks.lnasc?"":"disabled"} onclick="S.t1.stage='far';render();scrollTo(0,0)">Salvar e ir à farmácia</button></div>`;
+  if(g.stage==="far"){const ready=g.picks.fnome&&g.picks.fale;
+    return pg+sector("Farmácia","Ficha própria da farmácia")+
+    `<div class="card stack">${optField("t1","fnome","Nome do paciente",p.o.nome)}${optField("t1","fale","Alergia",p.o.alergia)}</div>
+    <div class="rx"><small>Prescrição médica</small><b>${p.presc}</b></div>${peekBtn}
+    ${ready?`<p><b>Pela ficha da farmácia, você libera o medicamento?</b></p><div class="row">
+      <button class="btn" onclick="decide1('liberar')">Liberar</button><button class="btn danger" onclick="decide1('bloquear')">Bloquear e chamar o médico</button></div>`
+    :`<p class="muted">Preencha a ficha para decidir.</p>`}`}
+  return "";
+}
+function decide1(d){
+  const g=S.t1,x=g.picks;
+  g.rec[g.i]={t:{nome:x.tnome,alergia:x.tale},l:{nome:x.lnome,nasc:x.lnasc},f:{nome:x.fnome,alergia:x.fale},d};
+  g.picks={};
+  if(g.i===1){g.corrected=true;g.modal="corr"}
+  else if(g.i===4){g.modal="homo"}
+  else{g.i++;g.stage="rec"}
+  render();window.scrollTo(0,0);
+}
+function fix1(yes){const g=S.t1;if(yes){g.pen+=8;g.labFixed=true;g.rec[0].l.nasc=NASC2}g.modal=null;g.i++;g.stage="rec";render()}
+function peekHomo(){
+  const g=S.t1;g.pen+=10;g.peeks++;
+  flash(band("RECEPÇÃO · PACIENTE 2",P[1].nome,P[1].nasc,P[1].alergia)+band("RECEPÇÃO · PACIENTE 4",P[3].nome,P[3].nasc,P[3].alergia),4000);save();
+}
+function homo1(k){S.t1.homo=k;S.t1.modal=null;finish1()}
+function modalT1(){
+  const g=S.t1;
+  if(g.modal==="corr")return `<div class="modal"><div class="sheet"><div class="phone">☎ RAMAL DA RECEPÇÃO</div>
+    <h3>A data da Maria Aparecida estava errada</h3>
+    <p>A recepção corrigiu na ficha dela: o certo é <b style="font-family:var(--f-mono)">${NASC2}</b>. O tubo dela já está no laboratório, etiquetado com a data antiga.</p>
+    <button class="btn" onclick="fix1(true)">Ir ao laboratório corrigir (+8 s)</button>
+    <button class="btn ghost" onclick="fix1(false)">Seguir o plantão</button></div></div>`;
+  if(g.modal==="homo")return `<div class="modal"><div class="sheet"><div class="phone">☎ LABORATÓRIO DE APOIO · URGENTE</div>
+    <h3>Potássio alto: José Carlos Santana, nascido em 19/04/1990</h3>
+    <p class="small">O resultado precisa ir para a ficha certa no laboratório. Estas são as fichas que <b>você</b> preencheu:</p>
+    <div class="opts">${g.rec.map((r,k)=>`<button class="opt" onclick="homo1(${k})">Ficha ${k+1} · ${esc(r.l.nome)} · ${r.l.nasc}</button>`).join("")}</div>
+    <button class="btn ghost" onclick="peekHomo()">Ligar para a recepção (+10 s)</button></div></div>`;
+  return "";
+}
+function finish1(){
+  const g=S.t1;stopClock(g);
+  const R={t:elapsed(g),peeks:g.peeks,div:0,ev:0,cham:0,campos:30+(g.labFixed?1:0),issues:[],anaPeek:g.anaPeek};
+  P.forEach((p,k)=>{
+    const r=g.rec[k],ale=p.late||p.alergia,nasc=k===0?NASC2:p.nasc;
+    [["Triagem","o nome",r.t.nome,p.nome],["Triagem","a alergia",r.t.alergia,ale],["Laboratório","o nome",r.l.nome,p.nome],["Laboratório","o nascimento",r.l.nasc,nasc],["Farmácia","o nome",r.f.nome,p.nome],["Farmácia","a alergia",r.f.alergia,ale]]
+    .forEach(([s,f,v,t])=>{if(v!==t){R.div++;R.issues.push({c:"div",h:`${s}: ${f} de ${esc(who(k))} ficou <b>${esc(v)}</b>. O certo é ${esc(t)}.`})}});
+    const ok=p.bloq?"bloquear":"liberar";
+    if(r.d!==ok){
+      if(p.bloq){R.ev++;R.issues.push({c:"ev",h:`<b>Evento adverso:</b> ${esc(who(k))} recebeu ${p.presc} sendo alérgico(a) a ${ale.toLowerCase()}.`})}
+      else{R.cham++;R.issues.push({c:"div",h:`${esc(who(k))} ficou sem ${p.presc} e o médico foi chamado sem necessidade.`})}
+    }
+  });
+  if(g.homo!==3){R.ev++;R.issues.push({c:"ev",h:`<b>Evento adverso:</b> o potássio alto do José Carlos de 1990 foi anexado à ficha ${g.homo+1} (${esc(who(g.homo))}). O paciente certo ficou sem o alerta.`})}
+  R.score=clamp(30-6*R.ev-2*R.div-2*R.cham);
+  S.r1=R;S.t1=null;render();window.scrollTo(0,0);
+}
+function resT1(){
+  const R=S.r1;
+  return `<div class="eyebrow">Fim da Parte 1A · ${R.score} de 30 pontos</div>
+  <h2>${R.ev+R.div?"O hospital tem mais de uma versão de cada paciente":"Tudo certo. E deu muito trabalho"}</h2>
+  <div class="stats">
+    <div class="stat"><b>${fmt(R.t)}</b><span>tempo com penalidades</span></div>
+    <div class="stat warn"><b>${R.campos}</b><span>campos copiados à mão</span></div>
+    <div class="stat ${R.div?"bad":"good"}"><b>${R.div}</b><span>dados divergentes</span></div>
+    <div class="stat ${R.ev?"bad":"good"}"><b>${R.ev}</b><span>eventos adversos</span></div>
+  </div>
+  <ul class="issues">${R.issues.length?R.issues.map(x=>`<li class="${x.c==="ev"?"":"div"}">${x.h}</li>`).join(""):`<li class="ok">Nenhum dado divergente e nenhum evento adverso.</li>`}</ul>
+  <div class="card stack"><p><b>Você foi a interface.</b> Todo dado que chegou certo de um setor a outro chegou porque você lembrou ou foi conferir.</p>
+  <p class="small muted">${R.anaPeek?"Repare que você consultou a recepção sobre a Ana, e a ficha de lá dizia “nenhuma alergia”. A recepção não estava errada: ela só não sabia o que a mãe contou na triagem.":"A ficha da recepção dizia “nenhuma alergia” para a Ana. Ela não estava errada: só não sabia o que a mãe contou na triagem."} Cada ficha guarda a verdade de um setor.</p></div>
+  <button class="btn" onclick="go('t2')">Ir para a Parte 1B</button>
+  <button class="btn ghost" onclick="newT1()">Refazer a Parte 1A</button>`;
+}
+
+/* ================= turno 2: pontes ================= */
+function newT2(){S.t2={ph:"brief1",links:{},fresh:{},broken:{},rep:{},cash:50000,spent:0,runs:{}};S.r2=null;render();window.scrollTo(0,0)}
+function nodesOf(t){return ["build3","run3"].includes(t.ph)||t.ph==="brief3"?"RTLFB":"RTLF"}
+function isActive(t,k){return t.links[k]&&!t.broken[k]}
+function route(t,a,b,nodes){
+  const prev={[a]:null},q=[a];
+  while(q.length){const x=q.shift();if(x===b)break;
+    for(const y of nodes)if(y!==x&&!(y in prev)&&isActive(t,pk(x,y))){prev[y]=x;q.push(y)}}
+  if(!(b in prev))return null;
+  const path=[];for(let x=b;x!==null;x=prev[x])path.unshift(x);return path;
+}
+function runFlows(t,flows,nodes){return flows.map(f=>{const p=route(t,f.a,f.b,nodes);return{...f,st:!p?"fa":p.length===2?"ok":"at",via:p?p.slice(1,-1):[]}})}
+function netSVG(t,nodes){
+  const n=nodes.length,cx=160,cy=150,R=108;
+  const pos={};[...nodes].forEach((s,k)=>{const a=-Math.PI/2+k*2*Math.PI/n;pos[s]=[cx+R*Math.cos(a),cy+R*Math.sin(a)]});
+  let lines="";
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=nodes[i],b=nodes[j],k=pk(a,b),[x1,y1]=pos[a],[x2,y2]=pos[b];
+    if(t.links[k]&&t.broken[k])lines+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--alert)" stroke-width="3" stroke-dasharray="6 5"/>`;
+    else if(t.links[k])lines+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--teal)" stroke-width="3.5"/>`;
+    else lines+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="2 5"/>`;}
+  const nd=[...nodes].map(s=>{const[x,y]=pos[s];return `<g><rect x="${x-26}" y="${y-18}" width="52" height="36" rx="7" fill="var(--card)" stroke="var(--ink)" stroke-width="2"/>
+    <text x="${x}" y="${y+5}" text-anchor="middle" font-family="Martian Mono,monospace" font-size="13" font-weight="600" fill="var(--ink)">${ABR[s]}</text>
+    <rect x="${x-7}" y="${y+21}" width="14" height="7" rx="2" fill="var(--amber)"/></g>`}).join("");
+  return `<div class="netwrap"><svg class="net" viewBox="0 0 320 300" role="img" aria-label="Mapa das interfaces entre os setores">${lines}${nd}</svg></div>`;
+}
+function pairBtn(t,k,mode){
+  const [a,b]=k.split(""),on=!!t.links[k],locked=mode==="build3"&&on&&!t.fresh[k];
+  const price=locked?"já existe":on?"ligada":"R$ 10 mil";
+  return `<button class="pair ${on?"on":""} ${locked?"lock":""}" ${locked?"disabled":""} onclick="toggleLink('${k}')"><span>${SEC[a]} ↔ ${SEC[b]}</span><span class="pr">${price}</span></button>`;
+}
+function toggleLink(k){
+  const t=S.t2;
+  if(t.links[k]){if(!t.fresh[k])return;delete t.links[k];delete t.fresh[k];t.cash+=COST;t.spent-=COST}
+  else{if(t.cash<COST){flash(`<div class="feedback no"><b>Sem orçamento.</b>Desligue outra interface para ligar esta.</div>`,2200);return}
+    t.links[k]=true;t.fresh[k]=true;t.cash-=COST;t.spent+=COST}
+  render();
+}
+function toggleRep(k){
+  const t=S.t2;
+  if(t.rep[k]){delete t.rep[k];t.cash+=REPAIR;t.spent-=REPAIR}
+  else{if(t.cash<REPAIR){flash(`<div class="feedback no"><b>Sem orçamento.</b>Escolha quais consertar.</div>`,2200);return}
+    t.rep[k]=true;t.cash-=REPAIR;t.spent+=REPAIR}
+  render();
+}
+function cashBar(t,label){return `<div class="cash"><span>${label||"Orçamento disponível"}</span><b>${brl(t.cash)}</b></div>`}
+function flowList(res){
+  return `<ul class="flows">${res.map(f=>`<li><span class="rt">${SEC[f.a]} → ${SEC[f.b]}</span><span>${f.d}</span>
+    ${f.st==="ok"?`<span class="chip ok">CHEGOU</span>`:f.st==="at"?`<span class="chip at">ATRASOU · PASSOU POR ${f.via.map(x=>SEC[x].toUpperCase()).join(" E ")} E FOI REDIGITADO</span>`:`<span class="chip fa">NÃO CHEGOU</span>`}</li>`).join("")}</ul>`;
+}
+function tally(res){return{ok:res.filter(f=>f.st==="ok").length,at:res.filter(f=>f.st==="at").length,fa:res.filter(f=>f.st==="fa").length}}
+function vT2(){
+  const t=S.t2;
+  if(!t){
+    if(S.r2)return resT2();
+    return `<div class="eyebrow">Parte 1B · ainda sem sistema integrado</div><h2>Cada setor ganhou um sistema</h2>
+    <p class="lead">A diretoria cansou das fichas de papel. Agora recepção, triagem, laboratório e farmácia têm cada um o seu sistema, com banco de dados próprio.</p>
+    <div class="card stack small"><p>Sistemas separados não conversam sozinhos. Para um dado sair de um e chegar ao outro, alguém precisa construir uma <b>interface</b>: uma ponte entre os dois.</p>
+    <p>Você decide quais pontes construir, com orçamento limitado. Depois, o hospital vai mudar, e as pontes vão sentir.</p></div>
+    <button class="btn" onclick="newT2()">Começar o turno</button>`;
+  }
+  const n4="RTLF";
+  if(t.ph==="brief1")return `<div class="meta"><span>Parte 1B</span><span>Etapa 1 de 4</span></div>${steps(4,0)}
+    <h2>O que precisa viajar</h2><p>Estes são os dados que, todo dia, precisam sair de um setor e chegar a outro:</p>
+    ${flowList(FLOWS1.map(f=>({...f,st:"none"}))).replace(/<span class="chip[^>]*>[^<]*<\/span>/g,"")}
+    <div class="card small">A diretoria liberou <b>R$ 50 mil</b>. Cada interface custa <b>R$ 10 mil</b> para construir. Se não houver ponte direta, o dado pode passar por outro setor, mas alguém vai ter que redigitar.</div>
+    <button class="btn" onclick="S.t2.ph='build1';render();scrollTo(0,0)">Montar as pontes</button>`;
+  if(t.ph==="build1"){const cnt=Object.keys(t.links).length;
+    return `<div class="meta"><span>Parte 1B</span><span>Etapa 1 de 4</span></div>${steps(4,0)}
+    <h3>Toque para ligar dois sistemas</h3>${cashBar(t)}${netSVG(t,n4)}
+    <div class="stack">${["RT","RL","RF","TL","TF","LF"].map(k=>pairBtn(t,k,"build1")).join("")}</div>
+    <button class="btn" ${cnt?"":"disabled"} onclick="S.t2.runs.a=runFlows(S.t2,FLOWS1,'RTLF');S.t2.ph='run1';render();scrollTo(0,0)">Ligar e rodar o plantão</button>`;}
+  if(t.ph==="run1"){const s=tally(t.runs.a);
+    return `<div class="meta"><span>Parte 1B</span><span>Etapa 1 de 4</span></div>${steps(4,0)}
+    <h2>${s.fa?"Nem tudo chegou":s.at?"Chegou, mas nem tudo direto":"Tudo chegou"}</h2>${flowList(t.runs.a)}
+    <div class="card small">Você construiu ${Object.keys(t.links).length} interface(s) e gastou ${brl(t.spent)}. ${s.ok===5?"Funcionou. Agora o hospital vai mudar.":"Cada dado que não chegou direto é uma ficha que vai ficar diferente da outra."}</div>
+    <button class="btn" onclick="breakF()">Duas semanas depois…</button>`;}
+  if(t.ph==="break"){const brk=Object.keys(t.broken);
+    return `<div class="meta"><span>Parte 1B</span><span>Etapa 2 de 4</span></div>${steps(4,1)}
+    <div class="phone">☎ TI DO HOSPITAL</div><h2>A farmácia trocou de sistema</h2>
+    <p>O sistema novo da farmácia guarda os dados em outro formato. ${brk.length?`<b>Toda interface ligada à farmácia parou.</b>`:"Você não tinha nenhuma ponte com a farmácia, então nada quebrou. Mas nada chegava lá, também."}</p>
+    ${netSVG(t,n4)}
+    ${brk.length?`${cashBar(t,"A diretoria liberou mais R$ 10 mil")}
+    <p class="small">Consertar cada interface custa <b>R$ 4 mil</b>. Escolha quais consertar.</p>
+    <div class="stack">${brk.map(k=>{const[a,b]=k.split("");return `<button class="pair ${t.rep[k]?"on":"brk"}" onclick="toggleRep('${k}')"><span>${SEC[a]} ↔ ${SEC[b]}</span><span class="pr">${t.rep[k]?"consertar":"quebrada · R$ 4 mil"}</span></button>`}).join("")}</div>`:""}
+    <button class="btn" onclick="applyRep()">Rodar o plantão de novo</button>`;}
+  if(t.ph==="run2"){const s=tally(t.runs.b);
+    return `<div class="meta"><span>Parte 1B</span><span>Etapa 2 de 4</span></div>${steps(4,1)}
+    <h2>Depois da troca</h2>${flowList(t.runs.b)}
+    <div class="card small">${s.fa?`${s.fa} dado(s) pararam de chegar. Ninguém mexeu na recepção, no laboratório nem na triagem, e mesmo assim eles foram afetados.`:"Tudo voltou a funcionar, mas o conserto saiu do orçamento."} Mexer em um sistema obriga a mexer em todas as pontes que encostam nele.</div>
+    <button class="btn" onclick="S.t2.ph='brief3';S.t2.cash+=30000;render();scrollTo(0,0)">Um mês depois…</button>`;}
+  if(t.ph==="brief3")return `<div class="meta"><span>Parte 1B</span><span>Etapa 3 de 4</span></div>${steps(4,2)}
+    <h2>O hospital abriu o Faturamento</h2><p>Um quinto setor, com o seu próprio sistema. Ele precisa receber:</p>
+    ${flowList(FLOWS2.map(f=>({...f,st:"none"}))).replace(/<span class="chip[^>]*>[^<]*<\/span>/g,"")}
+    <div class="card small">Com 4 sistemas, havia <b>6</b> pontes possíveis. Com 5, passam a ser <b>10</b>. A diretoria liberou mais <b>R$ 30 mil</b>.</div>
+    <button class="btn" onclick="S.t2.fresh={};S.t2.ph='build3';render();scrollTo(0,0)">Montar as novas pontes</button>`;
+  if(t.ph==="build3"){const all=[];for(let i=0;i<5;i++)for(let j=i+1;j<5;j++)all.push(ORD[i]+ORD[j]);
+    const list=all.filter(k=>k.includes("B")).concat(all.filter(k=>!k.includes("B")));
+    return `<div class="meta"><span>Parte 1B</span><span>Etapa 3 de 4</span></div>${steps(4,2)}
+    <h3>Ligue o Faturamento</h3>${cashBar(t)}${netSVG(t,"RTLFB")}
+    <div class="stack">${list.map(k=>pairBtn(t,k,"build3")).join("")}</div>
+    <button class="btn" onclick="S.t2.runs.c=runFlows(S.t2,FLOWS1.concat(FLOWS2),'RTLFB');S.t2.ph='run3';render();scrollTo(0,0)">Rodar o plantão completo</button>`;}
+  if(t.ph==="run3")return `<div class="meta"><span>Parte 1B</span><span>Etapa 4 de 4</span></div>${steps(4,3)}
+    <h2>O plantão com cinco sistemas</h2>${flowList(t.runs.c)}
+    <button class="btn" onclick="finish2()">Ver o balanço</button>`;
+  return "";
+}
+function breakF(){const t=S.t2;t.broken={};Object.keys(t.links).forEach(k=>{if(k.includes("F"))t.broken[k]=true});if(Object.keys(t.broken).length)t.cash+=10000;t.ph="break";render();scrollTo(0,0)}
+function applyRep(){const t=S.t2;Object.keys(t.rep).forEach(k=>delete t.broken[k]);t.repaired=Object.keys(t.rep).length;t.rep={};t.runs.b=runFlows(t,FLOWS1,"RTLF");t.ph="run2";render();scrollTo(0,0)}
+function finish2(){
+  const t=S.t2,b=tally(t.runs.b),c=tally(t.runs.c),act=Object.keys(t.links).filter(k=>isActive(t,k)).length;
+  S.r2={built:Object.keys(t.links).length,active:act,spent:t.spent,monthly:act*UPKEEP,b,c,
+    score:clamp(20-3*(b.fa+c.fa)-1*(b.at+c.at)),failed:t.runs.c.filter(f=>f.st==="fa").map(f=>f.d),links:{...t.links},broken:{...t.broken}};
+  S.t2=null;render();window.scrollTo(0,0);
+}
+function resT2(){
+  const R=S.r2,tt={links:R.links,broken:R.broken};
+  return `<div class="eyebrow">Fim da Parte 1B · ${R.score} de 20 pontos</div>
+  <h2>Ilhas remendadas por pontes</h2>
+  ${netSVG(tt,"RTLFB")}
+  <div class="stats">
+    <div class="stat warn"><b>${R.built}</b><span>interfaces construídas, de 10 possíveis</span></div>
+    <div class="stat"><b>${(R.spent/1000).toLocaleString("pt-BR")}k</b><span>reais gastos em pontes</span></div>
+    <div class="stat warn"><b>${(R.monthly/1000).toLocaleString("pt-BR")}k</b><span>reais por mês para manter</span></div>
+    <div class="stat ${R.c.fa?"bad":"good"}"><b>${R.c.fa}</b><span>dados que não chegam no fim</span></div>
+  </div>
+  ${R.failed.length?`<ul class="issues">${R.failed.map(d=>`<li>${d}: não chega.</li>`).join("")}</ul>`:""}
+  <div class="card stack small"><p>O hospital tentou integrar e continua desorganizado: cada linha verde é uma interface que alguém construiu e que alguém precisa manter. Quando a farmácia trocou de sistema, todas as pontes ligadas a ela caíram juntas.</p>
+  <p>E repare: cada setor continua com a <b>sua cópia</b> do dado (o quadradinho amarelo embaixo de cada sistema). A ponte só leva a informação de uma cópia para a outra.</p></div>
+  <div class="eyebrow" style="margin-top:6px">A conta das pontes</div>
+  <div class="seg"><button class="${S.net.mode==="ilhas"?"on":""}" onclick="S.net.mode='ilhas';render()">Cada um com seu banco</button><button class="${S.net.mode==="base"?"on":""}" onclick="S.net.mode='base';render()">Base única</button></div>
+  <label for="nslider" style="font-weight:700">Número de sistemas: <span id="nlabel">${S.net.n}</span></label>
+  <input id="nslider" type="range" min="2" max="12" value="${S.net.n}" oninput="S.net.n=+this.value;$('#nlabel').textContent=this.value;$('#netout').innerHTML=netOut();save()">
+  <div id="netout">${netOut()}</div>
+  <button class="btn" onclick="go('t3')">Ir para a Parte 2</button>
+  <button class="btn ghost" onclick="newT2()">Refazer a Parte 1B</button>`;
+}
+function netOut(){
+  const {n,mode}=S.net,il=mode==="ilhas",count=il?n*(n-1)/2:n;
+  return `<div class="card stack"><div class="bignum"><b>${count}</b><span>${count===1?"ligação":"ligações"} para construir e manter</span></div>
+  <div class="formula">${il?`n × (n − 1) ÷ 2 = ${n} × ${n-1} ÷ 2`:`uma por setor = ${n}`}</div></div>`;
+}
+
+/* ================= turno 3: prontuário ================= */
+function newT3(){
+  S.t3={ph:"perm",pi:0,perm:{cad:{},ale:{},res:{},con:{}},checked:{},i:0,stage:"reg",picks:{},order:{},reg:[],raw:[],dec:[],late:null,acc:0,since:null,pen:0,running:false,modal:null,plan:null,fixedR:false};
+  S.r3=null;render();window.scrollTo(0,0);
+}
+const can=(t,item,s,lv)=>{const v=item==="cad"&&s==="R"&&t.fixedR?"E":t.perm[item][s];return lv==="E"?v==="E":v==="V"||v==="E"};
+function setPerm(item,s,v){const t=S.t3;if(t.checked[t.pi])return;t.perm[item][s]=v;render()}
+function vT3(){
+  const t=S.t3;
+  if(!t){
+    if(S.r3)return resT3();
+    return `<div class="eyebrow">Parte 2 · com sistema integrado</div><h2>Um prontuário para o hospital inteiro</h2>
+    <p class="lead">Agora o hospital tem um sistema integrado: as pontes saíram e existe um prontuário eletrônico só, e cada setor acessa a mesma base pela sua tela.</p>
+    <div class="card stack small"><p><b>Primeiro</b>, você é o administrador: define o que cada setor pode <b>ver</b> e <b>editar</b>. O que você decidir vai valer no plantão.</p>
+    <p><b>Depois</b>, você cobre o plantão com os mesmos cinco pacientes.</p>
+    <p><b>No fim</b>, o servidor cai.</p></div>
+    <button class="btn" onclick="newT3()">Começar o turno</button>`;
+  }
+  if(t.ph==="perm"){
+    const it=ITEMS[t.pi],chk=t.checked[t.pi],all="RTLFB".split("").every(s=>t.perm[it.k][s]);
+    return `<div class="meta"><span>Permissões</span><span>${t.pi+1} de 4</span></div>${steps(4,t.pi)}
+    <h2>${it.n}</h2><p class="muted">${it.d} Defina o acesso de cada setor.</p>
+    <div class="stack">${"RTLFB".split("").map(s=>{const v=t.perm[it.k][s],good=it.ok[s].includes(v);
+      return `<div class="prow ${chk?(good?"okr":"bad"):""}"><div class="ph"><b>${SEC[s]}</b>${chk?`<span class="mark">${good?"✓ CERTO":"✗ REVEJA"}</span>`:""}</div>
+      <div class="lvl">${["N","V","E"].map(l=>`<button class="${v===l?"on":""}" ${chk?"disabled":""} onclick="setPerm('${it.k}','${s}','${l}')">${LV[l]}</button>`).join("")}</div>
+      ${chk?`<div class="why">${good?"":`Melhor: ${it.ok[s].map(x=>LV[x].toLowerCase()).join(" ou ")}. `}${it.why[s]}</div>`:""}</div>`}).join("")}</div>
+    ${chk?`<p class="small muted">A permissão que você marcou é a que vai valer no plantão, mesmo onde está errada.</p>
+      <button class="btn" onclick="nextPerm()">${t.pi<3?"Próximo dado":"Ir para o plantão"}</button>`
+    :`<button class="btn" ${all?"":"disabled"} onclick="S.t3.checked[S.t3.pi]=true;render()">Conferir</button>`}`;
+  }
+  if(t.ph==="brief"){
+    return `<div class="eyebrow">Plantão com prontuário único</div><h2>Registre uma vez</h2>
+    <p class="lead">Na recepção, o paciente mostra o documento. Você registra no prontuário, e cada setor vê pela sua tela, conforme as permissões que você definiu.</p>
+    ${t.fixedR?`<div class="feedback no"><b>A recepção não podia editar o cadastro.</b>Sem isso, ninguém seria registrado. A TI corrigiu essa permissão às pressas.</div>`:""}
+    <button class="btn" onclick="startPlay3()">Abrir o plantão</button>`;
+  }
+  if(t.ph==="play"){
+    const k=t.i,p=P[k],pg=`<div class="meta"><span>Paciente ${k+1} de 5</span><span>${t.stage==="reg"?"Recepção":t.stage==="tri"?"Triagem":"Telas dos setores"}</span></div>`+steps(5,k);
+    if(t.stage==="reg"){const x=t.picks;
+      return pg+sector("Recepção","Prontuário eletrônico · cadastro")+
+      `<div class="doc"><div class="pn">DOCUMENTO APRESENTADO PELO PACIENTE</div><dl class="kv" style="margin-top:6px"><dt>Nome</dt><dd>${esc(p.nome)}</dd><dt>Nasc.</dt><dd>${p.nasc}</dd><dt>Alergia informada</dt><dd>${p.alergia}</dd></dl></div>
+      <div class="card stack">${optField("t3","rnome","Nome",p.o.nome)}${optField("t3","rnasc","Data de nascimento",p.o.nasc)}${optField("t3","rale","Alergia",p.o.alergia)}</div>
+      <button class="btn" ${x.rnome&&x.rnasc&&x.rale?"":"disabled"} onclick="reg3()">Registrar no prontuário</button>`;}
+    if(t.stage==="tri"){const ok=can(t,"ale","T","E");
+      return pg+sector("Triagem","Prontuário eletrônico · enfermagem")+
+      `<div class="bubble"><small>A MÃE DA PACIENTE, NA TRIAGEM</small>“Ela tem alergia a penicilina! Esqueci de falar lá na frente.”</div>
+      ${ok?`<p>Sua tela permite editar alergias.</p><button class="btn" onclick="late3(true)">Registrar penicilina no prontuário</button><button class="btn ghost" onclick="late3(false)">Deixar como está</button>`
+      :`<div class="feedback no"><b>Sua tela não permite editar alergias.</b>Você definiu “${LV[t.perm.ale.T]}” para a triagem. A enfermeira anota num papel e grampeia na pasta.</div><button class="btn" onclick="late3(false)">Continuar</button>`}`;}
+    if(t.stage==="view"){
+      const r=t.reg[k],seeA=can(t,"ale","F","V"),alert=seeA&&p.allergen&&r.alergia===p.allergen,labOk=can(t,"res","L","E"),seeRes=can(t,"res","F","V");
+      return pg+`<div class="eyebrow">Registrado uma vez · visto em três telas</div><div class="screens">
+      <div class="screen fill"><header>Triagem<em>PRONT. ${p.id}</em></header><div class="body"><span>${esc(r.nome)}</span>
+        ${can(t,"ale","T","V")?`<span>Alergia: <b>${esc(r.alergia)}</b></span>`:`<span class="noaccess">Alergias: sem acesso</span>`}</div></div>
+      <div class="screen fill"><header>Laboratório<em>PRONT. ${p.id}</em></header><div class="body"><span>${esc(r.nome)} · nasc. ${r.nasc}</span>
+        ${k===3?(labOk?`<span>Resultado: <b>potássio alto</b>, lançado no prontuário ${p.id}.</span><span class="small muted">Existem dois José Carlos Santana. O resultado foi para o prontuário certo pelo número, sem ninguém precisar escolher.</span>`
+          :`<span class="noaccess">Resultado pronto, mas o laboratório não tem permissão para lançar. Ficou impresso na bancada.</span>`):""}</div></div>
+      <div class="screen fill"><header>Farmácia<em>PRONT. ${p.id}</em></header><div class="body"><span>${esc(r.nome)}</span>
+        ${seeA?`<span>Alergia: <b>${esc(r.alergia)}</b></span>`:`<span class="noaccess">Alergias: sem acesso</span>`}
+        ${k===3&&labOk&&seeRes?`<span>Último exame: potássio alto</span>`:""}
+        <div class="rx"><small>Prescrição médica</small><b>${p.presc}</b></div>
+        ${alert?`<div class="alertbox"><small>ALERTA DO PRONTUÁRIO</small>Alergia a ${p.allergen.toLowerCase()} registrada. A prescrição é incompatível.</div>`:""}</div></div>
+      </div>
+      <p><b>Você libera o medicamento?</b></p><div class="row">
+      <button class="btn" onclick="decide3('liberar')">Liberar</button><button class="btn danger" onclick="decide3('bloquear')">Bloquear e chamar o médico</button></div>`;}
+  }
+  if(t.ph==="down"){
+    const plans=[["wait","Esperar o sistema voltar"],["sheet","Cada setor volta para a sua planilha antiga até o sistema voltar"],["cont","Seguir o plano de contingência: formulário de papel padronizado e lançamento no prontuário quando voltar"]];
+    const fb={wait:["no","Atendimento parado.","Duas horas sem registrar nada. Os pacientes esperaram, e o que aconteceu nesse tempo não ficou em lugar nenhum."],
+      sheet:["mid","Funciona, mas as ilhas voltaram.","Por duas horas, cada setor tem a sua versão. Quando o sistema volta, alguém precisa descobrir qual está certa."],
+      cont:["ok","Essa é a resposta.","O formulário é o mesmo para todos e tem dono para lançar depois. O atendimento não para e o prontuário volta a ser a única versão."]};
+    return `<div class="phone">☎ TI DO HOSPITAL · 21h40</div><h2>O servidor do prontuário caiu</h2>
+    <div class="screens">${["Recepção","Triagem","Laboratório","Farmácia"].map(n=>`<div class="screen" style="opacity:.5"><header>${n}<em style="color:var(--alert)">OFFLINE</em></header><div class="body"><span class="noaccess">Sem conexão com o prontuário</span></div></div>`).join("")}</div>
+    <p>Com a base única, quando ela cai, <b>todos os setores param juntos</b>. O que o hospital faz?</p>
+    <div class="opts">${plans.map(([k,l])=>`<button class="opt body ${t.plan===k?"sel":""}" ${t.plan?"disabled":""} onclick="S.t3.plan='${k}';render()">${l}</button>`).join("")}</div>
+    ${t.plan?`<div class="feedback ${fb[t.plan][0]}"><b>${fb[t.plan][1]}</b>${fb[t.plan][2]} O ideal é ter as duas coisas: um servidor reserva (redundância) e o plano em papel. Esse é o pilar da <b>disponibilidade</b>.</div>
+    <button class="btn" onclick="finish3()">Ver o balanço</button>`:""}`;
+  }
+  return "";
+}
+function nextPerm(){const t=S.t3;if(t.pi<3){t.pi++}else{t.fixedR=t.perm.cad.R!=="E";t.ph="brief"}render();window.scrollTo(0,0)}
+function startPlay3(){const t=S.t3;t.ph="play";t.running=true;t.since=Date.now();t.acc=0;render();window.scrollTo(0,0)}
+function reg3(){
+  const t=S.t3,x=t.picks;
+  t.raw[t.i]={nome:x.rnome,nasc:x.rnasc,alergia:x.rale};
+  t.reg[t.i]={nome:x.rnome,nasc:x.rnasc,alergia:x.rale};
+  t.picks={};t.stage=t.i===2?"tri":"view";render();window.scrollTo(0,0);
+}
+function late3(yes){const t=S.t3;t.late=yes;if(yes)t.reg[2].alergia="Penicilina";t.stage="view";render();window.scrollTo(0,0)}
+function decide3(d){
+  const t=S.t3;t.dec[t.i]=d;
+  if(t.i===1){t.reg[0].nasc=NASC2;t.modal="corr"}
+  else if(t.i===4){stopClock(t);t.ph="down"}
+  else{t.i++;t.stage="reg"}
+  render();window.scrollTo(0,0);
+}
+function modalT3(){
+  if(S.t3&&S.t3.modal==="corr")return `<div class="modal"><div class="sheet"><div class="phone">PRONTUÁRIO · ATUALIZAÇÃO</div>
+    <h3>A data da Maria Aparecida foi corrigida</h3>
+    <p>A recepção alterou para <b style="font-family:var(--f-mono)">${NASC2}</b>. Laboratório e farmácia já veem a data nova. Não existe outra cópia para atualizar, e ninguém precisou ir até lá.</p>
+    <button class="btn" onclick="S.t3.modal=null;S.t3.i++;S.t3.stage='reg';render()">Seguir o plantão</button></div></div>`;
+  return "";
+}
+function finish3(){
+  const t=S.t3,R={t:elapsed(t),campos:15+(t.late?1:0),div:0,ev:0,cham:0,labFail:0,issues:[],permOK:0,plan:t.plan};
+  ITEMS.forEach(it=>"RTLFB".split("").forEach(s=>{if(it.ok[s].includes(t.perm[it.k][s]))R.permOK++}));
+  P.forEach((p,k)=>{
+    const r=t.raw[k];
+    [["o nome",r.nome,p.nome],["o nascimento",r.nasc,p.nasc],["a alergia",r.alergia,p.alergia]].forEach(([f,v,tr])=>{if(v!==tr){R.div++;R.issues.push({c:"div",h:`Você registrou ${f} de ${esc(who(k))} como <b>${esc(v)}</b>. O erro apareceu igual em todas as telas. Uma correção na recepção resolveria para todos.`})}});
+    const ok=p.bloq?"bloquear":"liberar";
+    if(t.dec[k]!==ok){
+      if(p.bloq){R.ev++;let why;
+        if(k===2)why=!can(t,"ale","T","E")?"a triagem não podia editar alergias, e a informação ficou num papel":!t.late?"a alergia contada na triagem não foi registrada":!can(t,"ale","F","V")?"a farmácia não tinha acesso às alergias":"o alerta apareceu, mas o remédio foi liberado";
+        else why=t.raw[3].alergia!=="Iodo"?"a alergia foi registrada errada na recepção":!can(t,"ale","F","V")?"a farmácia não tinha acesso às alergias":"o alerta apareceu, mas o remédio foi liberado";
+        R.issues.push({c:"ev",h:`<b>Evento adverso:</b> ${esc(who(k))} recebeu ${p.presc}. Motivo: ${why}.`})}
+      else{R.cham++;R.issues.push({c:"div",h:`${esc(who(k))} ficou sem ${p.presc} e o médico foi chamado sem necessidade.`})}
+    }
+  });
+  if(!can(t,"res","L","E")){R.labFail=1;R.issues.push({c:"ev",h:`O potássio alto do José Carlos de 1990 não entrou no prontuário: o laboratório não tinha permissão para lançar resultados.`})}
+  const planPts={cont:6,sheet:2,wait:0}[t.plan]||0;
+  R.score=clamp(Math.round(R.permOK/20*12)+planPts+Math.max(0,12-6*R.ev-2*R.div-2*R.cham-3*R.labFail));
+  S.r3=R;S.t3=null;render();window.scrollTo(0,0);
+}
+function resT3(){
+  const R=S.r3,A=S.r1;
+  return `<div class="eyebrow">Fim da Parte 2 · ${R.score} de 30 pontos</div>
+  <h2>Os setores continuam lá. A segunda cópia, não</h2>
+  <div class="stats">
+    <div class="stat"><b>${fmt(R.t)}</b><span>tempo do plantão${A?` (Parte 1A: ${fmt(A.t)})`:""}</span></div>
+    <div class="stat good"><b>${R.campos}</b><span>campos digitados${A?` (Parte 1A: ${A.campos})`:""}</span></div>
+    <div class="stat ${R.permOK>=16?"good":"warn"}"><b>${R.permOK}/20</b><span>permissões certas</span></div>
+    <div class="stat ${R.ev+R.labFail?"bad":"good"}"><b>${R.ev+R.labFail}</b><span>eventos adversos</span></div>
+  </div>
+  <ul class="issues">${R.issues.length?R.issues.map(x=>`<li class="${x.c==="ev"?"":"div"}">${x.h}</li>`).join(""):`<li class="ok">Nenhum erro de registro e nenhum evento adverso.</li>`}</ul>
+  <div class="card stack small"><p>Cada setor manteve a sua tela, a sua rotina e a sua permissão. Ninguém foi demitido. O que acabou foi a ficha duplicada.</p>
+  <p>Em troca, vieram novas responsabilidades: <b>quem registra, registra para todos</b> (um erro na origem chega a todas as telas), <b>quem vê o quê</b> precisa ser decidido, e <b>se a base cai, todos caem juntos</b>.</p></div>
+  <button class="btn" onclick="go('dx')">Ir para os Casos</button>
+  <button class="btn ghost" onclick="newT3()">Refazer a Parte 2</button>`;
+}
+
+/* ================= casos ================= */
+function vDx(){
+  const z=S.dx;
+  if(z.i>=DX.length)return `<div class="eyebrow">Fim dos casos</div><h2>${z.score} de ${DX.length} diagnósticos certos</h2>
+    <div class="card small">Os quatro sintomas de quem não é integrado: <b>dado duplicado, retrabalho, várias versões da verdade e decisão cega</b>.</div>
+    <button class="btn" onclick="go('fim')">Ver o placar</button>
+    <button class="btn ghost" onclick="S.dx={i:0,ans:null,score:0};render()">Refazer os casos</button>`;
+  const q=DX[z.i];
+  return `<div class="meta"><span>Qual é o sintoma?</span><span>${z.i+1} de ${DX.length}</span></div>${steps(DX.length,z.i)}
+  <div class="qcard"><span class="tag">${q.t.toUpperCase()}</span>${q.s}</div>
+  <div class="opts">${DXO.map((o,k)=>`<button class="opt body ${z.ans===k?"sel":""}" ${z.ans!==null?"disabled":""} onclick="ansDx(${k})">${o}</button>`).join("")}</div>
+  ${z.ans!==null?`<div class="feedback ${z.ans===q.a?"ok":"no"}"><b>${z.ans===q.a?"Certo.":"Não é bem isso."}</b>${q.e}</div>
+  <button class="btn" onclick="S.dx.i++;S.dx.ans=null;render();scrollTo(0,0)">${z.i<DX.length-1?"Próximo caso":"Terminar"}</button>`:""}`;
+}
+function ansDx(k){const z=S.dx;if(z.ans!==null)return;z.ans=k;if(k===DX[z.i].a)z.score++;render()}
+
+/* ================= placar ================= */
+function vFim(){
+  const r1=S.r1,r2=S.r2,r3=S.r3,dxDone=S.dx.i>=DX.length,dxPts=dxDone?S.dx.score*2:0,finPts=S.fin?6:0;
+  const total=(r1?r1.score:0)+(r2?r2.score:0)+(r3?r3.score:0)+dxPts+finPts;
+  const parts=[["Parte 1A · Fichas",r1?r1.score:null,30],["Parte 1B · Pontes",r2?r2.score:null,20],["Parte 2 · Prontuário",r3?r3.score:null,30],["Casos",dxDone?dxPts:null,14],["Pergunta final",S.fin===null?null:finPts,6]];
+  const pending=parts.filter(p=>p[1]===null).length;
+  const code=`Plantão Santa Clara · ${total}/100\nP1A: ${r1?fmt(r1.t)+", "+r1.div+" divergências, "+r1.ev+" eventos":"não feito"}\nP1B: ${r2?r2.built+" interfaces, "+brl(r2.spent)+", "+r2.c.fa+" dados sem chegar":"não feito"}\nP2: ${r3?fmt(r3.t)+", permissões "+r3.permOK+"/20, "+(r3.ev+r3.labFail)+" eventos":"não feito"}\nCasos: ${dxDone?S.dx.score+"/"+DX.length:"não feito"}`;
+  return `<div class="eyebrow">Placar do plantão</div>
+  <div class="score"><b>${total}</b><span>de 100</span></div>
+  ${pending?`<p class="muted small">Falta(m) ${pending} parte(s). Os pontos delas entram quando você terminar.</p>`:""}
+  <div class="card"><ul class="parts">${parts.map(([n,v,m])=>`<li><span>${n}</span><span class="n">${v===null?"—":v} / ${m}</span></li>`).join("")}</ul></div>
+  ${r1&&r3?`<div class="tablewrap"><table class="cmp"><thead><tr><th></th><th class="n">Sem sistema</th><th class="n">Com sistema</th></tr></thead><tbody>
+    <tr><td>Tempo</td><td class="n">${fmt(r1.t)}</td><td class="n">${fmt(r3.t)}</td></tr>
+    <tr><td>Campos digitados</td><td class="n">${r1.campos}</td><td class="n">${r3.campos}</td></tr>
+    <tr><td>Dados divergentes entre setores</td><td class="n">${r1.div}</td><td class="n">0</td></tr>
+    <tr><td>Eventos adversos</td><td class="n">${r1.ev}</td><td class="n">${r3.ev+r3.labFail}</td></tr>
+    <tr><td>Correção chegou a todos</td><td class="n">${r1.issues.some(x=>x.h.includes(NASC2))?"Não":"Sim, a pé"}</td><td class="n">Sim</td></tr>
+  </tbody></table></div>`:""}
+  <div class="eyebrow" style="margin-top:6px">Pergunta final</div>
+  <h3>${FINAL.q}</h3>
+  ${S.fin===null?`<div class="opts">${FINAL.o.map(o=>`<button class="opt body" onclick="S.fin=${o[1]};render()">${o[0]}</button>`).join("")}</div>`
+  :`<div class="feedback ${S.fin?"ok":"no"}"><b>${S.fin?"Certo.":"Não é bem isso."}</b>${FINAL.e}</div>`}
+  <div class="card"><p style="font-size:18px"><b>Para levar:</b> quando um dado é registrado, quem mais no hospital precisa saber, e fica sabendo sem que ninguém digite de novo?</p></div>
+  <div class="eyebrow" style="margin-top:6px">Seu código para o Classroom</div>
+  <textarea id="code" class="code" readonly>${esc(code)}</textarea>
+  <button class="btn" id="copybtn" onclick="copyCode()">Copiar código</button>
+  ${UI.reset?`<div class="feedback no"><b>Apagar todo o progresso?</b>Isso zera as duas partes, os casos e o placar.</div>
+    <div class="row"><button class="btn danger" onclick="resetAll()">Apagar e recomeçar</button><button class="btn ghost" onclick="UI.reset=false;render()">Cancelar</button></div>`
+  :`<button class="btn ghost" onclick="UI.reset=true;render()">Recomeçar tudo</button>`}`;
+}
+function copyCode(){
+  const ta=$("#code"),b=$("#copybtn"),done=()=>{b.textContent="Copiado";setTimeout(()=>{if(b.isConnected)b.textContent="Copiar código"},1800)};
+  const fallback=()=>{ta.focus();ta.select();try{document.execCommand("copy");done()}catch(e){b.textContent="Selecionado: copie manualmente"}};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(ta.value).then(done,fallback);else fallback();
+}
+function resetAll(){const n=S.net;S=DEF();S.net=n;UI.reset=false;S.tab="inicio";render();window.scrollTo(0,0)}
+
+/* ================= render ================= */
+function render(){
+  const m={inicio:vInicio,t1:vT1,t2:vT2,t3:vT3,dx:vDx,fim:vFim};
+  document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!=="v-"+S.tab);
+  $("#v-"+S.tab).innerHTML=m[S.tab]();
+  $("#modal-root").innerHTML=S.tab==="t1"&&S.t1?modalT1():S.tab==="t3"?modalT3():"";
+  marks();save();
+}
+render();
+</script>
+
+</body>
+</html>
